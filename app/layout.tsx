@@ -8,7 +8,8 @@ import { BookingProvider } from "@/components/booking-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CurrencyProvider } from "@/components/currency-context";
 import Script from "next/script";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { MessageCircle, X } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,8 +18,11 @@ export default function RootLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    
+    // Replace with your actual Streamlit app URL
+    const streamlitUrl = "https://hotelmate-chatbot.streamlit.app/npm";
 
-  
     useEffect(() => {
         // Dynamically create the hidden Google Translate container
         const div = document.createElement('div');
@@ -48,16 +52,20 @@ export default function RootLayout({
 
         // Cleanup to avoid memory leaks
         return () => {
-          try {
-              const element = document.getElementById('google_translate_element');
-              if (element && element.parentNode && element.parentNode.contains(element)) {
-                  element.parentNode.removeChild(element);
-              }
-          } catch (error) {
-              console.log('Cleanup error handled:', error);
-          }
-      };
+            try {
+                const element = document.getElementById('google_translate_element');
+                if (element && element.parentNode && element.parentNode.contains(element)) {
+                    element.parentNode.removeChild(element);
+                }
+            } catch (error) {
+                console.log('Cleanup error handled:', error);
+            }
+        };
     }, []);
+
+    const toggleChatbot = () => {
+        setIsChatOpen(!isChatOpen);
+    };
 
     return (
         <html lang="en" suppressHydrationWarning>
@@ -81,6 +89,102 @@ export default function RootLayout({
                                 <main className="flex-1">{children}</main>
                                 <Footer />
                             </div>
+                            
+                            {/* Chatbot Widget */}
+                            <>
+                                {/* Floating Chat Button */}
+                                <button
+                                    onClick={toggleChatbot}
+                                    className={`fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-105 ${
+                                        isChatOpen ? 'scale-0' : 'scale-100'
+                                    }`}
+                                    aria-label="Open HoteMate Assistant"
+                                >
+                                    <MessageCircle size={24} />
+                                </button>
+
+                                {/* Chatbot Iframe Container - Desktop */}
+                                <div
+                                    className={`fixed bottom-6 right-6 z-50 transition-all duration-300 hidden lg:block ${
+                                        isChatOpen 
+                                            ? 'w-96 h-[600px] opacity-100 scale-100' 
+                                            : 'w-0 h-0 opacity-0 scale-0'
+                                    }`}
+                                >
+                                    <div className="relative w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden border">
+                                        {/* Header */}
+                                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                                            <h3 className="font-semibold text-lg">🤖 HoteMate Assistant</h3>
+                                            <button
+                                                onClick={toggleChatbot}
+                                                className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                                                aria-label="Close chatbot"
+                                            >
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+
+                                        {/* Iframe Container */}
+                                        <div className="w-full h-[calc(100%-64px)]">
+                                            {isChatOpen && (
+                                                <iframe
+                                                    src={streamlitUrl}
+                                                    className="w-full h-full border-0"
+                                                    title="HoteMate Chatbot"
+                                                    loading="lazy"
+                                                    allow="camera; microphone; geolocation"
+                                                    sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Mobile Overlay Background */}
+                                {isChatOpen && (
+                                    <div 
+                                        className="fixed inset-0 z-40 bg-black/50 lg:hidden" 
+                                        onClick={toggleChatbot} 
+                                    />
+                                )}
+
+                                {/* Mobile Full Screen Chatbot */}
+                                <div
+                                    className={`fixed inset-4 z-50 lg:hidden transition-all duration-300 ${
+                                        isChatOpen 
+                                            ? 'opacity-100 scale-100' 
+                                            : 'opacity-0 scale-0 pointer-events-none'
+                                    }`}
+                                >
+                                    <div className="relative w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden">
+                                        {/* Mobile Header */}
+                                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                                            <h3 className="font-semibold text-lg">🤖 HoteMate Assistant</h3>
+                                            <button
+                                                onClick={toggleChatbot}
+                                                className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                                                aria-label="Close chatbot"
+                                            >
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+
+                                        {/* Mobile Iframe */}
+                                        <div className="w-full h-[calc(100%-64px)]">
+                                            {isChatOpen && (
+                                                <iframe
+                                                    src={streamlitUrl}
+                                                    className="w-full h-full border-0"
+                                                    title="HoteMate Chatbot"
+                                                    loading="lazy"
+                                                    allow="camera; microphone; geolocation"
+                                                    sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
                         </BookingProvider>
                     </CurrencyProvider>
                 </ThemeProvider>
